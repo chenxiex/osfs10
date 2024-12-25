@@ -61,6 +61,16 @@ PUBLIC void task_mm()
 		case PROCS:
 			mm_msg.RETVAL = do_procs();
 			break;
+		case KILL:
+			if (proc_table[mm_msg.PID].p_flags == FREE_SLOT) {
+				mm_msg.RETVAL = -1;
+				break;
+			}
+			mm_msg.source=mm_msg.PID;
+			do_exit(-1);
+			mm_msg.source=src;
+			mm_msg.RETVAL = 0;
+			break;
 		default:
 			dump_msg("MM::unknown msg", &mm_msg);
 			assert(0);

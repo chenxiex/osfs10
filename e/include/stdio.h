@@ -149,4 +149,7 @@ PUBLIC	int	syslog		(const char *fmt, ...);
 /* lib/procs.c */
 PUBLIC int	get_procs		(struct sproc *proc_t);
 
+/* lib/kill.c */
+PUBLIC int	kill		(int pid);
+
 #endif /* _ORANGES_STDIO_H_ */

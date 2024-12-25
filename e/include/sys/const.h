@@ -179,7 +179,7 @@ enum msgtype {
 	EXEC, WAIT, PROCS,
 
 	/* FS & MM */
-	FORK, EXIT,
+	FORK, EXIT, KILL,
 
 	/* TTY, SYS, FS, MM, etc */
 	SYSCALL_RET,
