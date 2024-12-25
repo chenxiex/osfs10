@@ -152,4 +152,7 @@ PUBLIC int	get_procs		(struct sproc *proc_t);
 /* lib/kill.c */
 PUBLIC int	kill		(int pid);
 
+/* lib/list.c */
+PUBLIC int	list		(char *pathname, char *buf);
+
 #endif /* _ORANGES_STDIO_H_ */

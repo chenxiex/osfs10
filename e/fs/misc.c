@@ -191,3 +191,55 @@ PUBLIC int strip_path(char * filename, const char * pathname,
 	return 0;
 }
 
+PUBLIC int do_ls()
+{
+	const int filenames_len=(MAX_PATH+1)*NR_FILES;
+	char pathname[MAX_PATH];
+	char filenames[filenames_len];
+	char *p = filenames;
+	struct inode *dir_inode;
+	int src=fs_msg.source;
+	void *buf=fs_msg.BUF;
+	int name_len = fs_msg.NAME_LEN;
+	assert(name_len < MAX_PATH);
+	phys_copy((void*)va2la(TASK_FS, pathname),
+		  (void*)va2la(src, fs_msg.PATHNAME),
+		  name_len);
+	pathname[name_len] = 0;
+
+	if (strip_path(filenames, pathname, &dir_inode) != 0)
+		return -1;
+
+	memset(filenames, 0, filenames_len*sizeof(char));
+
+	int dir_blk0_nr = dir_inode->i_start_sect;
+	int nr_dir_blks = (dir_inode->i_size + SECTOR_SIZE - 1) / SECTOR_SIZE;
+	int nr_dir_entries =
+	  dir_inode->i_size / DIR_ENTRY_SIZE; /**
+					       * including unused slots
+					       * (the file has been deleted
+					       * but the slot is still there)
+					       */
+	int m = 0;
+	struct dir_entry * pde;
+	for (int i = 0; i < nr_dir_blks; i++) {
+		RD_SECT(dir_inode->i_dev, dir_blk0_nr + i);
+		pde = (struct dir_entry *)fsbuf;
+		for (int j = 0; j < SECTOR_SIZE / DIR_ENTRY_SIZE; j++,pde++) {
+			if (pde->inode_nr != 0)
+			{
+				int len = strlen(pde->name);
+				memcpy(p, pde->name, len);
+				p += len;
+				*p++ = '\0';
+			}
+			if (++m > nr_dir_entries)
+				break;
+		}
+		if (m > nr_dir_entries) /* all entries have been iterated */
+			break;
+	}
+
+	phys_copy((void*)va2la(src, buf), (void*)va2la(TASK_FS,filenames), filenames_len*sizeof(char));
+	return 0;
+}
