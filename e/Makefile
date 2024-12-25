@@ -13,7 +13,7 @@ ENTRYOFFSET	=   0x400
 # Programs, flags, etc.
 ASM		= nasm
 DASM		= objdump
-CC		= gcc
+CC		= ./docker-gcc.sh
 LD		= ld
 ASMBFLAGS	= -I boot/include/
 ASMKFLAGS	= -I include/ -I include/sys/ -f elf
@@ -46,6 +46,9 @@ LOBJS		=  lib/syscall.o\
 			lib/fork.o lib/exit.o lib/wait.o lib/exec.o
 DASMOUTPUT	= kernel.bin.asm
 
+CFLAGS      += -fno-stack-protector -m32 -Wno-error=implicit-function-declaration -fcommon
+LDFLAGS     += -m elf_i386
+
 # All Phony Targets
 .PHONY : everything final image clean realclean disasm all buildimg
 
@@ -54,6 +57,24 @@ nop :
 	@echo "why not \`make image' huh? :)"
 
 everything : $(ORANGESBOOT) $(ORANGESKERNEL)
+
+run: img
+	qemu-system-i386 -m 32M -drive format=raw,if=floppy,file=a.img -drive format=raw,if=ide,file=80m.img -boot a
+
+debug: img
+	qemu-system-i386 -m 32M -drive format=raw,if=floppy,file=a.img -s -S -drive format=raw,if=ide,file=80m.img -boot a
+
+a.img : a.img.gz
+	gzip -cd a.img.gz > a.img
+
+80m.img : 80m.img.gz
+	gzip -cd 80m.img.gz > 80m.img
+
+img : a.img $(ORANGESBOOT) $(ORANGESKERNEL) 80m.img
+	scripts/buildimg.sh
+
+rclean :
+	rm -f $(OBJS) $(LOBJS) $(LIB) $(ORANGESBOOT) $(ORANGESKERNEL) a.img krnl.map 80m.img
 
 all : realclean everything
 
