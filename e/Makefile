@@ -34,7 +34,7 @@ OBJS		= kernel/kernel.o kernel/start.o kernel/main.o\
 			kernel/systask.o kernel/hd.o\
 			kernel/kliba.o kernel/klib.o\
 			lib/syslog.o\
-			mm/main.o mm/forkexit.o mm/exec.o\
+			mm/main.o mm/forkexit.o mm/exec.o mm/procs.o\
 			fs/main.o fs/open.o fs/misc.o fs/read_write.o\
 			fs/link.o\
 			fs/disklog.o
@@ -43,7 +43,7 @@ LOBJS		=  lib/syscall.o\
 			lib/string.o lib/misc.o\
 			lib/open.o lib/read.o lib/write.o lib/close.o lib/unlink.o\
 			lib/getpid.o lib/stat.o\
-			lib/fork.o lib/exit.o lib/wait.o lib/exec.o
+			lib/fork.o lib/exit.o lib/wait.o lib/exec.o lib/procs.o
 DASMOUTPUT	= kernel.bin.asm
 
 CFLAGS      += -fno-stack-protector -m32 -Wno-error=implicit-function-declaration -fcommon
@@ -202,6 +202,9 @@ lib/wait.o: lib/wait.c
 lib/exec.o: lib/exec.c
 	$(CC) $(CFLAGS) -o $@ $<
 
+lib/procs.o: lib/procs.c
+	$(CC) $(CFLAGS) -o $@ $<
+
 lib/stat.o: lib/stat.c
 	$(CC) $(CFLAGS) -o $@ $<
 
@@ -212,6 +215,9 @@ mm/forkexit.o: mm/forkexit.c
 	$(CC) $(CFLAGS) -o $@ $<
 
 mm/exec.o: mm/exec.c
+	$(CC) $(CFLAGS) -o $@ $<
+
+mm/procs.o: mm/procs.c
 	$(CC) $(CFLAGS) -o $@ $<
 
 fs/main.o: fs/main.c

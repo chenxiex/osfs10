@@ -68,6 +68,12 @@ struct boot_params {
 	unsigned char *	kernel_file;	/* addr of kernel file */
 };
 
-
+struct sproc {
+	int priority;
+	char name[16];
+	int p_flags;
+	int p_parent;
+	int exit_status;
+};
 
 #endif /* _ORANGES_TYPE_H_ */

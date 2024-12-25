@@ -114,6 +114,9 @@ PUBLIC void		do_wait();
 /* mm/exec.c */
 PUBLIC int		do_exec();
 
+/* mm/procs.c */
+PUBLIC int		do_procs();
+
 /* console.c */
 PUBLIC void out_char(CONSOLE* p_con, char ch);
 PUBLIC void scroll_screen(CONSOLE* p_con, int direction);
