@@ -245,11 +245,6 @@ void shabby_shell(const char * tty_name)
 		write(1, "$ ", 2);
 		int r = read(0, rdbuf, 70);
 		rdbuf[r] = 0;
-		int bg = 0;
-		if (rdbuf[r - 1] == '&') {
-			bg = 1;
-			rdbuf[--r] = 0;
-		}
 
 		int argc = 0;
 		char * argv[PROC_ORIGIN_STACK];
@@ -284,22 +279,13 @@ void shabby_shell(const char * tty_name)
 			close(fd);
 			int pid = fork();
 			if (pid != 0) { /* parent */
-				if (!bg)
-				{
-					int s;
-					waitpid(pid,&s);
-				}
+				int s;
+				wait(&s);
 			}
 			else {	/* child */
 				execv(argv[0], argv);
 			}
 		}
-	}
-	int s;
-	if (wait(&s)!=-1)
-	{
-		printf("Waiting children process to exit\n");
-		while (wait(&s)!=-1);
 	}
 
 	close(1);
