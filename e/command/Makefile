@@ -12,7 +12,7 @@ CFLAGS		= -I ../include/ -c -fno-builtin -fno-stack-protector -Wall
 LDFLAGS		= -Ttext 0x1000
 DASMFLAGS	= -D
 LIB		= ../lib/orangescrt.a
-BIN		= echo pwd ps kill ls touch rm
+BIN		= echo pwd ps kill ls touch rm cat
 
 CFLAGS      += -fno-stack-protector -m32 -Wno-error=implicit-function-declaration -fcommon
 LDFLAGS     += -m elf_i386
@@ -86,4 +86,10 @@ rm.o: rm.c ../include/stdio.h
 	$(CC) $(CFLAGS) -o $@ $<
 
 rm : rm.o start.o $(LIB)
+	$(LD) $(LDFLAGS) -o $@ $?
+
+cat.o: cat.c ../include/stdio.h
+	$(CC) $(CFLAGS) -o $@ $<
+
+cat : cat.o start.o $(LIB)
 	$(LD) $(LDFLAGS) -o $@ $?
