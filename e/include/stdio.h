@@ -155,4 +155,7 @@ PUBLIC int	kill		(int pid);
 /* lib/list.c */
 PUBLIC int	list		(char *pathname, char *buf);
 
+/* lib/lseek.c */
+PUBLIC int lseek		(int fd, int offset, int whence);
+
 #endif /* _ORANGES_STDIO_H_ */

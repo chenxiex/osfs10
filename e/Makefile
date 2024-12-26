@@ -43,7 +43,7 @@ LOBJS		=  lib/syscall.o\
 			lib/string.o lib/misc.o\
 			lib/open.o lib/read.o lib/write.o lib/close.o lib/unlink.o\
 			lib/getpid.o lib/stat.o lib/list.o\
-			lib/fork.o lib/exit.o lib/wait.o lib/exec.o lib/procs.o lib/kill.o
+			lib/fork.o lib/exit.o lib/wait.o lib/exec.o lib/procs.o lib/kill.o lib/lseek.o
 DASMOUTPUT	= kernel.bin.asm
 
 CFLAGS      += -fno-stack-protector -m32 -Wno-error=implicit-function-declaration -fcommon
@@ -170,6 +170,9 @@ lib/string.o : lib/string.asm
 	$(ASM) $(ASMKFLAGS) -o $@ $<
 
 lib/open.o: lib/open.c
+	$(CC) $(CFLAGS) -o $@ $<
+
+lib/lseek.o: lib/lseek.c
 	$(CC) $(CFLAGS) -o $@ $<
 
 lib/read.o: lib/read.c
