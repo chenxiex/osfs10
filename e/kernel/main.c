@@ -245,45 +245,70 @@ void shabby_shell(const char * tty_name)
 		write(1, "$ ", 2);
 		int r = read(0, rdbuf, 70);
 		rdbuf[r] = 0;
+		
+		int i=0,j=0,bg=0,fg=0;
+		while (i<r)
+		{
+			char rdbuf1[128];
+			memset(rdbuf1, 0, sizeof(rdbuf1));
+			for (;i<r && rdbuf[i]!='&';i++);
+			if (rdbuf[i]=='&')
+			{
+				bg++;
+				rdbuf[i]=0;
+				strcpy(rdbuf1, rdbuf+j);
+				j=i+1;
+			}else{
+				fg=1;
+				strcpy(rdbuf1, rdbuf+j);
+				j=i;
+			}
 
-		int argc = 0;
-		char * argv[PROC_ORIGIN_STACK];
-		char * p = rdbuf;
-		char * s;
-		int word = 0;
-		char ch;
-		do {
-			ch = *p;
-			if (*p != ' ' && *p != 0 && !word) {
-				s = p;
-				word = 1;
-			}
-			if ((*p == ' ' || *p == 0) && word) {
-				word = 0;
-				argv[argc++] = s;
-				*p = 0;
-			}
-			p++;
-		} while(ch);
-		argv[argc] = 0;
+			int argc = 0;
+			char * argv[PROC_ORIGIN_STACK];
+			char * p = rdbuf1;
+			char * s;
+			int word = 0;
+			char ch;
+			do {
+				ch = *p;
+				if (*p != ' ' && *p != 0 && !word) {
+					s = p;
+					word = 1;
+				}
+				if ((*p == ' ' || *p == 0) && word) {
+					word = 0;
+					argv[argc++] = s;
+					*p = 0;
+				}
+				p++;
+			} while(ch);
+			argv[argc] = 0;
 
-		int fd = open(argv[0], O_RDWR);
-		if (fd == -1) {
-			if (rdbuf[0]) {
-				write(1, "{", 1);
-				write(1, rdbuf, r);
-				write(1, "}\n", 2);
+			int fd = open(argv[0], O_RDWR);
+			if (fd == -1) {
+				if (rdbuf1[0]) {
+					write(1, "{", 1);
+					write(1, rdbuf1, r);
+					write(1, "}\n", 2);
+				}
 			}
-		}
-		else {
-			close(fd);
-			int pid = fork();
-			if (pid != 0) { /* parent */
-				int s;
-				wait(&s);
-			}
-			else {	/* child */
-				execv(argv[0], argv);
+			else {
+				close(fd);
+				int pid = fork();
+				if (pid != 0) { /* parent */
+					if (fg)
+					{
+						for (int k=0;k<bg+fg;k++)
+						{
+							int s;
+							wait(&s);
+						}
+					}
+				}
+				else {	/* child */
+					execv(argv[0], argv);
+				}
 			}
 		}
 	}
