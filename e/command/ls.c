@@ -9,7 +9,7 @@ int main()
 {
     char filenames[FILENAMES_LEN];
     char pathname[] = "/";
-    memset(filenames, 0, FILENAMES_LEN);
+    memset(filenames, 0, sizeof(filenames));
     list(pathname, filenames);
     printf("filename    device    inode    mode    size\n");
     for (char *p = filenames; *p != 0; p += strlen(p) + 1)
