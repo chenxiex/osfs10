@@ -71,6 +71,10 @@ PUBLIC void task_mm()
 			mm_msg.source=src;
 			mm_msg.RETVAL = 0;
 			break;
+		case WAIT_PID:
+			do_waitpid();
+			reply = 0;
+			break;
 		default:
 			dump_msg("MM::unknown msg", &mm_msg);
 			assert(0);

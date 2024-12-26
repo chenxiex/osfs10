@@ -158,4 +158,7 @@ PUBLIC int	list		(char *pathname, char *buf);
 /* lib/lseek.c */
 PUBLIC int lseek		(int fd, int offset, int whence);
 
+/* lib/waitpid.c */
+PUBLIC int waitpid		(int pid, int * status);
+
 #endif /* _ORANGES_STDIO_H_ */

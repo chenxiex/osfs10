@@ -279,3 +279,31 @@ PUBLIC void do_wait()
 		send_recv(SEND, pid, &msg);
 	}
 }
+
+PUBLIC void do_waitpid()
+{
+	int pid = mm_msg.source;
+	int sonpid=mm_msg.PID;
+
+	struct proc* p_proc = &proc_table[sonpid];
+	int children = 0;
+	if (p_proc->p_parent == pid) {
+		children++;
+		if (p_proc->p_flags & HANGING) {
+			cleanup(p_proc);
+			return;
+		}
+	}
+
+	if (children) {
+		/* has children, but no child is HANGING */
+		proc_table[pid].p_flags |= WAITING;
+	}
+	else {
+		/* no child at all */
+		MESSAGE msg;
+		msg.type = SYSCALL_RET;
+		msg.PID = NO_TASK;
+		send_recv(SEND, pid, &msg);
+	}
+}
