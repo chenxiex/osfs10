@@ -41,9 +41,9 @@ OBJS		= kernel/kernel.o kernel/start.o kernel/main.o\
 LOBJS		=  lib/syscall.o\
 			lib/printf.o lib/vsprintf.o\
 			lib/string.o lib/misc.o\
-			lib/open.o lib/read.o lib/write.o lib/close.o lib/unlink.o lib/lseek.o\
+			lib/open.o lib/read.o lib/write.o lib/close.o lib/unlink.o\
 			lib/getpid.o lib/stat.o lib/list.o\
-			lib/fork.o lib/exit.o lib/wait.o lib/exec.o lib/procs.o lib/kill.o lib/waitpid.o
+			lib/fork.o lib/exit.o lib/wait.o lib/exec.o lib/procs.o lib/kill.o lib/lseek.o
 DASMOUTPUT	= kernel.bin.asm
 
 CFLAGS      += -fno-stack-protector -m32 -Wno-error=implicit-function-declaration -fcommon
@@ -200,9 +200,6 @@ lib/exit.o: lib/exit.c
 	$(CC) $(CFLAGS) -o $@ $<
 
 lib/wait.o: lib/wait.c
-	$(CC) $(CFLAGS) -o $@ $<
-
-lib/waitpid.o: lib/waitpid.c
 	$(CC) $(CFLAGS) -o $@ $<
 
 lib/exec.o: lib/exec.c
