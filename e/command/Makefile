@@ -5,7 +5,7 @@ HD		= ../80m.img
 
 ASM		= nasm
 DASM		= objdump
-CC		= gcc
+CC		= clang
 LD		= ld
 ASMFLAGS	= -I ../include/ -f elf
 CFLAGS		= -I ../include/ -c -fno-builtin -fno-stack-protector -Wall
