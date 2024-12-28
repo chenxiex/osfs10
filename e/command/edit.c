@@ -24,13 +24,48 @@ PRIVATE unsigned int stou(char *str)
 PRIVATE int enlarge_file(int size)
 {
     int fd = open(filename, O_RDWR);
+
+    char buf[BUF_SIZE];
+    int pointer = s.st_size - BUF_SIZE > 0 ? s.st_size - BUF_SIZE : 0;
+    int fsize = s.st_size;
+    while (1)
+    {
+        lseek(fd, pointer, SEEK_SET);
+        int read_cnt = BUF_SIZE > s.st_size - pointer ? s.st_size - pointer : BUF_SIZE;
+        read_cnt = read(fd, buf, read_cnt);
+        for (int i = read_cnt - 1; i >= 0; i--)
+        {
+            if (buf[i] == 0)
+            {
+                size--;
+                fsize--;
+            }
+            else
+            {
+                break;
+            }
+        }
+        if (pointer == 0)
+        {
+            break;
+        }
+        else
+        {
+            pointer = pointer - BUF_SIZE > 0 ? pointer - BUF_SIZE : 0;
+        }
+    }
+    if (size <= 0)
+    {
+        close(fd);
+        return fsize;
+    }
+
     if (lseek(fd, s.st_size, SEEK_SET) == -1)
     {
         printf("Failed to enlarge file\n");
-        return 1;
+        return -1;
     }
 
-    char buf[BUF_SIZE];
     memset(buf, 0, sizeof(buf));
 
     while (size > 0)
@@ -39,14 +74,14 @@ PRIVATE int enlarge_file(int size)
         if (write(fd, buf, write_cnt) == -1)
         {
             printf("Failed to enlarge file\n");
-            return 1;
+            return -1;
         }
         size -= write_cnt;
     }
 
     stat(filename, &s);
     close(fd);
-    return 0;
+    return s.st_size;
 }
 
 PRIVATE int substitute(unsigned int pointer, char *content)
@@ -93,7 +128,7 @@ PRIVATE int insert(unsigned int pointer, char *content)
         return 1;
     }
 
-    if (enlarge_file(pointer < org_size ? content_len : pointer + content_len - org_size) != 0)
+    if ((org_size = enlarge_file(pointer < org_size ? content_len : pointer + content_len - org_size)) == -1)
     {
         return 1;
     }
@@ -105,7 +140,7 @@ PRIVATE int insert(unsigned int pointer, char *content)
         int lpointer = org_size - move_cnt;
         assert(lpointer >= 0);
         int rpointer = lpointer + content_len;
-        do
+        while (move_cnt > 0)
         {
             lseek(fd, lpointer, SEEK_SET);
             move_cnt = read(fd, buf, move_cnt);
@@ -114,7 +149,7 @@ PRIVATE int insert(unsigned int pointer, char *content)
             move_cnt = lpointer - pointer < BUF_SIZE ? lpointer - pointer : BUF_SIZE;
             lpointer -= move_cnt;
             rpointer = lpointer + content_len;
-        } while (move_cnt > 0);
+        }
     }
 
     if (lseek(fd, pointer, SEEK_SET) == -1)
@@ -151,13 +186,13 @@ PRIVATE int delete(unsigned int pointer, unsigned int length)
     int move_cnt = s.st_size - rpointer < BUF_SIZE ? s.st_size - rpointer : BUF_SIZE;
     lseek(fd, rpointer, SEEK_SET);
     lseek(fd2, pointer, SEEK_SET);
-    do
+    while (move_cnt > 0)
     {
         move_cnt = read(fd, buf, move_cnt);
         write(fd2, buf, move_cnt);
         rpointer += move_cnt;
         move_cnt = s.st_size - rpointer < BUF_SIZE ? s.st_size - rpointer : BUF_SIZE;
-    } while (move_cnt > 0);
+    }
 
     memset(buf, 0, sizeof(buf));
     int zero_cnt = length;
