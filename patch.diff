@@ -1,0 +1,107 @@
+diff --git a/Dockerfile b/Dockerfile
+new file mode 100644
+index 0000000..fdb6056
+--- /dev/null
++++ b/Dockerfile
+@@ -0,0 +1,5 @@
++FROM ubuntu:16.04
++
++RUN dpkg --add-architecture i386 && \
++    apt-get update && \
++    apt-get install -y gcc-multilib g++-multilib
+diff --git a/Makefile b/Makefile
+index cabe419..21af205 100644
+--- a/Makefile
++++ b/Makefile
+@@ -13,7 +13,7 @@ ENTRYOFFSET	=   0x400
+ # Programs, flags, etc.
+ ASM		= nasm
+ DASM		= objdump
+-CC		= gcc
++CC		= ./docker-gcc.sh
+ LD		= ld
+ ASMBFLAGS	= -I boot/include/
+ ASMKFLAGS	= -I include/ -I include/sys/ -f elf
+@@ -46,6 +46,9 @@ LOBJS		=  lib/syscall.o\
+ 			lib/fork.o lib/exit.o lib/wait.o
+ DASMOUTPUT	= kernel.bin.asm
+ 
++CFLAGS      += -fno-stack-protector -m32 -Wno-error=implicit-function-declaration -fcommon
++LDFLAGS     += -m elf_i386
++
+ # All Phony Targets
+ .PHONY : everything final image clean realclean disasm all buildimg
+ 
+@@ -55,6 +58,24 @@ nop :
+ 
+ everything : $(ORANGESBOOT) $(ORANGESKERNEL)
+ 
++run: img
++	qemu-system-i386 -m 32M -drive format=raw,if=floppy,file=a.img -drive format=raw,if=ide,file=80m.img -boot a
++
++debug: img
++	qemu-system-i386 -m 32M -drive format=raw,if=floppy,file=a.img -s -S -drive format=raw,if=ide,file=80m.img -boot a
++
++a.img : a.img.gz
++	gzip -cd a.img.gz > a.img
++
++80m.img : 80m.img.gz
++	gzip -cd 80m.img.gz > 80m.img
++
++img : a.img $(ORANGESBOOT) $(ORANGESKERNEL) 80m.img
++	scripts/buildimg.sh
++
++rclean :
++	rm -f $(OBJS) $(LOBJS) $(LIB) $(ORANGESBOOT) $(ORANGESKERNEL) a.img krnl.map 80m.img
++
+ all : realclean everything
+ 
+ image : realclean everything clean buildimg
+diff --git a/docker-gcc.sh b/docker-gcc.sh
+new file mode 100755
+index 0000000..25da796
+--- /dev/null
++++ b/docker-gcc.sh
+@@ -0,0 +1,11 @@
++#!/bin/bash
++
++CONTAINER_NAME="gcc-multilib-container"
++
++# 检查镜像是否存在
++if [[ "$(podman images -q gcc-multilib:5.4 2> /dev/null)" == "" ]]; then
++  echo "镜像 gcc-multilib:5.4 不存在，正在构建..."
++  podman build -t gcc-multilib:5.4 .
++fi
++
++podman run --rm -v "$PWD":/usr/src/myapp -w /usr/src/myapp gcc-multilib:5.4 gcc "$@"
+\ No newline at end of file
+diff --git a/kernel/tty.c b/kernel/tty.c
+index 32a880b..2cb2c07 100644
+--- a/kernel/tty.c
++++ b/kernel/tty.c
+@@ -194,8 +194,8 @@ PUBLIC void in_process(TTY* tty, u32 key)
+ 		case F10:
+ 		case F11:
+ 		case F12:
+-			if ((key & FLAG_ALT_L) ||
+-			    (key & FLAG_ALT_R)) {	/* Alt + F1~F12 */
++			if ((key & FLAG_SHIFT_L) ||
++			    (key & FLAG_SHIFT_R)) {	/* Alt + F1~F12 */
+ 				select_console(raw_code - F1);
+ 			}
+ 			break;
+diff --git a/scripts/buildimg.sh b/scripts/buildimg.sh
+new file mode 100755
+index 0000000..4710870
+--- /dev/null
++++ b/scripts/buildimg.sh
+@@ -0,0 +1,8 @@
++#!/bin/bash
++dd if=boot/boot.bin of=a.img bs=512 count=1 conv=notrunc
++LOOPDEV=$(udisksctl loop-setup -f a.img | grep -o '/dev/loop[0-9]*')
++MOUNTPOINT=$(udisksctl mount -b ${LOOPDEV} | grep -o "/run/media/$USER/[a-zA-Z0-9]*")
++cp -fv boot/loader.bin ${MOUNTPOINT}
++cp -fv kernel.bin ${MOUNTPOINT}
++udisksctl unmount -b ${LOOPDEV}
++udisksctl loop-delete -b ${LOOPDEV}
+\ No newline at end of file
