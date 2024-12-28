@@ -7,7 +7,7 @@ const int BUF_SIZE = 1024;
 struct stat s;
 char *filename;
 
-PRIVATE int stoi(char *str)
+PRIVATE unsigned int stou(char *str)
 {
     int result = 0;
     for (int i = 0; str[i] != '\0'; i++)
@@ -49,7 +49,7 @@ PRIVATE int enlarge_file(int size)
     return 0;
 }
 
-PRIVATE int substitute(int pointer, char *content)
+PRIVATE int substitute(unsigned int pointer, char *content)
 {
     int fd = open(filename, O_RDWR);
     if (fd == -1)
@@ -82,7 +82,7 @@ PRIVATE int substitute(int pointer, char *content)
     return 0;
 }
 
-PRIVATE int insert(int pointer, char *content)
+PRIVATE int insert(unsigned int pointer, char *content)
 {
     int fd = open(filename, O_RDWR);
     int content_len = strlen(content);
@@ -93,33 +93,28 @@ PRIVATE int insert(int pointer, char *content)
         return 1;
     }
 
-    if (enlarge_file(content_len) != 0)
+    if (enlarge_file(pointer < org_size ? content_len : pointer + content_len - org_size) != 0)
     {
         return 1;
     }
-    char charbuf[1];
-    for (int i = org_size - 1; i >= pointer; i--)
+
+    if (pointer < org_size)
     {
-        if (lseek(fd, i, SEEK_SET) == -1)
+        char buf[BUF_SIZE];
+        int move_cnt = org_size - pointer < BUF_SIZE ? org_size - pointer : BUF_SIZE;
+        int lpointer = org_size - move_cnt;
+        assert(lpointer >= 0);
+        int rpointer = lpointer + content_len;
+        do
         {
-            printf("Lseek failed\n");
-            return 1;
-        }
-        if (read(fd, charbuf, 1 * sizeof(char)) == -1)
-        {
-            printf("Read failed\n");
-            return 1;
-        }
-        if (lseek(fd, i + content_len, SEEK_SET) == -1)
-        {
-            printf("Lseek failed\n");
-            return 1;
-        }
-        if (write(fd, charbuf, 1 * sizeof(char)) == -1)
-        {
-            printf("Write failed\n");
-            return 1;
-        }
+            lseek(fd, lpointer, SEEK_SET);
+            move_cnt = read(fd, buf, move_cnt);
+            lseek(fd, rpointer, SEEK_SET);
+            write(fd, buf, move_cnt);
+            move_cnt = lpointer - pointer < BUF_SIZE ? lpointer - pointer : BUF_SIZE;
+            lpointer -= move_cnt;
+            rpointer = lpointer + content_len;
+        } while (move_cnt > 0);
     }
 
     if (lseek(fd, pointer, SEEK_SET) == -1)
@@ -132,16 +127,17 @@ PRIVATE int insert(int pointer, char *content)
         printf("Write failed\n");
         return 1;
     }
- 
+
     stat(filename, &s);
     close(fd);
     return 0;
 }
 
-PRIVATE int delete(int pointer, int length)
+PRIVATE int delete(unsigned int pointer, unsigned int length)
 {
-    int fd=open(filename,O_RDWR);
-    if (fd == -1 || pointer >= s.st_size)
+    int fd = open(filename, O_RDWR);
+    int fd2 = open(filename, O_RDWR);
+    if (fd == -1 || pointer >= s.st_size || fd2 == -1)
     {
         return 1;
     }
@@ -151,25 +147,32 @@ PRIVATE int delete(int pointer, int length)
     }
 
     char buf[BUF_SIZE];
-    memset(buf, '\0', sizeof(buf));
+    int rpointer = pointer + length;
+    int move_cnt = s.st_size - rpointer < BUF_SIZE ? s.st_size - rpointer : BUF_SIZE;
+    lseek(fd, rpointer, SEEK_SET);
+    lseek(fd2, pointer, SEEK_SET);
+    do
+    {
+        move_cnt = read(fd, buf, move_cnt);
+        write(fd2, buf, move_cnt);
+        rpointer += move_cnt;
+        move_cnt = s.st_size - rpointer < BUF_SIZE ? s.st_size - rpointer : BUF_SIZE;
+    } while (move_cnt > 0);
 
-    if (lseek(fd, pointer, SEEK_SET) == -1)
+    memset(buf, 0, sizeof(buf));
+    int zero_cnt = length;
+    while (zero_cnt > 0)
     {
-        printf("Lseek failed\n");
-        return 1;
-    }
-    while (length > 0)
-    {
-        int write_cnt = length < BUF_SIZE ? length : BUF_SIZE;
-        if (write(fd, buf, write_cnt) == -1)
+        int write_cnt = zero_cnt < BUF_SIZE ? zero_cnt : BUF_SIZE;
+        if (write(fd2, buf, write_cnt) == -1)
         {
-            printf("Write failed\n");
             return 1;
         }
-        length -= write_cnt;
+        zero_cnt -= write_cnt;
     }
 
     stat(filename, &s);
+    close(fd2);
     close(fd);
     return 0;
 }
@@ -198,7 +201,7 @@ int main(int argc, char *argv[])
             retval = 1;
             break;
         }
-        int pointer = stoi(argv[3]);
+        unsigned int pointer = stou(argv[3]);
         char *content = argv[4];
         retval = insert(pointer, content);
         break;
@@ -210,7 +213,7 @@ int main(int argc, char *argv[])
             retval = 1;
             break;
         }
-        int pointer = stoi(argv[3]);
+        unsigned int pointer = stou(argv[3]);
         char *content = argv[4];
         retval = substitute(pointer, content);
         break;
@@ -222,9 +225,9 @@ int main(int argc, char *argv[])
             retval = 1;
             break;
         }
-        int pointer=stoi(argv[3]);
-        int length=stoi(argv[4]);
-        retval = delete(pointer, length);
+        unsigned pointer = stou(argv[3]);
+        unsigned length = stou(argv[4]);
+        retval = delete (pointer, length);
         break;
     }
     default:
