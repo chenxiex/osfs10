@@ -58,12 +58,6 @@ nop :
 
 everything : $(ORANGESBOOT) $(ORANGESKERNEL)
 
-run: img
-	qemu-system-i386 -m 32M -drive format=raw,if=floppy,file=a.img -drive format=raw,if=ide,file=80m.img -boot a
-
-debug: img
-	qemu-system-i386 -m 32M -drive format=raw,if=floppy,file=a.img -s -S -drive format=raw,if=ide,file=80m.img -boot a
-
 a.img : a.img.gz
 	gzip -cd a.img.gz > a.img
 
@@ -71,7 +65,9 @@ a.img : a.img.gz
 	gzip -cd 80m.img.gz > 80m.img
 
 img : a.img $(ORANGESBOOT) $(ORANGESKERNEL) 80m.img
-	scripts/buildimg.sh
+	dd if=boot/boot.bin of=a.img bs=512 count=1 conv=notrunc
+	mcopy -o -i a.img boot/loader.bin ::/
+	mcopy -o -i a.img kernel.bin ::/
 
 rclean :
 	rm -f $(OBJS) $(LOBJS) $(LIB) $(ORANGESBOOT) $(ORANGESKERNEL) a.img krnl.map 80m.img
