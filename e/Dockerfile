@@ -3,3 +3,7 @@ FROM ubuntu:16.04
 RUN dpkg --add-architecture i386 && \
     apt-get update && \
     apt-get install -y gcc-multilib g++-multilib
+
+RUN apt-get install make nasm -y
+
+RUN mkdir -p /mnt/floppy

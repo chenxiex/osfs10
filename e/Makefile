@@ -13,7 +13,7 @@ ENTRYOFFSET	=   0x400
 # Programs, flags, etc.
 ASM		= nasm
 DASM		= objdump
-CC		= ./docker-gcc.sh
+CC		= gcc
 LD		= ld
 ASMBFLAGS	= -I boot/include/
 ASMKFLAGS	= -I include/ -I include/sys/ -f elf
@@ -46,7 +46,7 @@ LOBJS		=  lib/syscall.o\
 			lib/fork.o lib/exit.o lib/wait.o lib/exec.o lib/procs.o lib/kill.o lib/lseek.o
 DASMOUTPUT	= kernel.bin.asm
 
-CFLAGS      += -fno-stack-protector -m32 -Wno-error=implicit-function-declaration -fcommon
+CFLAGS      += -fno-stack-protector -m32
 LDFLAGS     += -m elf_i386
 
 # All Phony Targets
